@@ -45,6 +45,7 @@ export const testDAO = ({
         _it('can create object : ie; Company', async () => {
             const acmeSchool = await dao.create(Company, <Company>{ name: 'Acme Public School' });   // ACT+ASSERT
             expect(acmeSchool.name).to.equal('Acme Public School');
+            expect(acmeSchool.POJO()).to.deep.equal({ name: 'Acme Public School', id: acmeSchool.id, memberships: [] });
             expect(acmeSchool.id).to.be.ok;
         });
         _it('can create object with an id specified', async () => {

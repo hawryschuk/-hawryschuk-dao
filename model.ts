@@ -25,32 +25,27 @@ export class Model<T = DAO> {
         await object.ready$;
         return object;
     }
-    
-    _cached?: number = (this as any)._cached || new Date().getTime();
 
-    POJO?() {
+    get _cached() { return this[Symbol.for('_cached')] ||= new Date().getTime() }
+    set _cached(value: number) { this[Symbol.for('_cached')] = value; }
+
+    POJO() {
         return Object
             .entries(this)
-            .filter(([key, value]) => [Function, Promise, Observable, DAO].every(klass => !(value instanceof klass)))
-            .filter(([key, value]) => !key.endsWith('$'))
-            .filter(([key, value]) => !key.startsWith('_'))
-            .filter(([key, value]) => key !== 'dao')
+            .filter(([key, value]) => [Function, Promise, Observable, DAO, Model].every(klass => !(value instanceof klass)))
             .reduce((pojo, [key, value]) => ({ ...pojo, [key]: value }), {});
     }
-    
-    async delete?(date = new Date, fromDAO = false) {
-        Util.log(`Model(${this.constructor.name}).delete(${date},${fromDAO})`)
+
+    async delete(date = new Date, fromDAO = false) {
         if (this.dao && !this.deleted$.value) {
             this.deleted$.next(date);
             !fromDAO && this.dao && await this.dao.delete(this.constructor, this.id, true, true);
-            Util.log(['removing dao from object', this.constructor.name, this.POJO()]);
             this.dao = null;
         }
-        Util.log(`/Model(${this.constructor.name}).delete(${date},${fromDAO})`)
     }
-    
+
     /** Updates the object, syncs-data-with-dao, publishes an update event */
-    async update$?(data: any, fromDao = false) {
+    async update$(data: any, fromDao = false) {
         if (!Util.equalsDeep({ ...this.POJO(), ...data }, this.POJO())) {
             Object.assign(this, data);
             if (!fromDao && this.dao) await this.dao.update(this.constructor, this.id, data, this);
